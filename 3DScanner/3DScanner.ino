@@ -25,6 +25,8 @@ Servo pitch;
 int yawIndex = 0;
 int pitchIndex = 0;
 
+#define WAIT_TIME 500
+
 
 // Info storage
 #define NUM_YAW (MAX_YAW - MIN_YAW) / YAW_STEP + 1
@@ -44,32 +46,59 @@ boolean doesPointExist(int analog) {
 
 
 void setup() {
+  // Distance sensor setup
   pinMode(DISTANCE_SENSOR, INPUT);
-  
+
+  // Servo setup
   yaw.attach(YAW_SERVO);
-  pitch.attach(PITCH_SERVO);
+  yaw.write(MIN_YAW);
   yawIndex = 0;
+  pitch.attach(PITCH_SERVO);
+  pitch.write(MIN_PITCH);
   pitchIndex = 0;
 
+  // Info setup
   lastUpdateTime = millis();
   done = false;
-  
+
+  // General setup
   Serial.begin(9600);
   Serial.println("Setup done.");
 }
 
 void loop() {
+  // If finished scan, do nothing
   if (!done) {
     unsigned long currentTime = millis();
-    if (currentTime - lastUpdateTime > 500) {
+    
+    // Allow servo time to move and sensor to take reading
+    if (currentTime - lastUpdateTime > WAIT_TIME) {
+      lastUpdateTime = currentTime;
+
+      // See if point is there
       int analog = analogRead(DISTANCE_SENSOR);
       pointExists[yawIndex][pitchIndex] = doesPointExist(analog);
+
+      // Log info
+      Serial.print("Yaw ");
+      Serial.print(MIN_YAW + yawIndex * YAW_STEP);
+      Serial.print(" and pitch ");
+      Serial.print(MIN_PITCH + pitchIndex * PITCH_STEP);
+      if (pointExists[yawIndex][pitchIndex]) {
+        Serial.println(" exists.");
+      } else {
+        Serial.println(" does not exist");
+      }
+
+      // Increment position
       yawIndex++;
       if (yawIndex >= NUM_YAW) {
         yawIndex = 0;
         pitchIndex++;
         if (pitchIndex >= NUM_PITCH) {
           done = true;
+
+          // Calculate and print final points to give to python
           Serial.print("[");
           for (yawIndex = 0; yawIndex < NUM_YAW; yawIndex++) {
             for (pitchIndex = 0; pitchIndex < NUM_PITCH; pitchIndex++) {
@@ -92,7 +121,12 @@ void loop() {
           Serial.println("]");
         }
       }
+
+      // Update servo position
+      yaw.write(MIN_YAW + yawIndex * YAW_STEP);
+      pitch.write(MIN_PITCH + pitchIndex * PITCH_STEP);
     }
   }
+
   delay(20);
 }

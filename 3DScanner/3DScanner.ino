@@ -15,17 +15,15 @@ Servo pitch;
 #define MIN_YAW 45
 #define MAX_YAW 135
 #define YAW_STEP 5
-#define YAW_OFFSET 90 // Number to subtract when calculating points
 
 #define MIN_PITCH 45
 #define MAX_PITCH 90
 #define PITCH_STEP 5
-#define YAW_OFFSET 90 // Number to subtract when calculating points
 
 int yawIndex = 0;
 int pitchIndex = 0;
 
-#define WAIT_TIME 500
+#define WAIT_TIME 5
 
 
 // Info storage
@@ -99,26 +97,33 @@ void loop() {
           done = true;
 
           // Calculate and print final points to give to python
-          Serial.print("[");
+          Serial.print("{'minYaw': ");
+          Serial.print(MIN_YAW);
+          Serial.print(", 'maxYaw': ");
+          Serial.print(MAX_YAW);
+          Serial.print(", 'yawStep': ");
+          Serial.print(YAW_STEP);
+          Serial.print(", 'minPitch': ");
+          Serial.print(MIN_PITCH);
+          Serial.print(", 'maxPitch': ");
+          Serial.print(MAX_PITCH);
+          Serial.print(", 'pitchStep': ");
+          Serial.print(PITCH_STEP);
+          Serial.print(", 'pointExists': [");
           for (yawIndex = 0; yawIndex < NUM_YAW; yawIndex++) {
+            Serial.print("[");
             for (pitchIndex = 0; pitchIndex < NUM_PITCH; pitchIndex++) {
-              if (pointExists[yawIndex][pitchIndex]) {
-                int yaw = MIN_YAW + YAW_STEP * yawIndex;
-                int pitch = MIN_PITCH + PITCH_STEP * pitchIndex;
-                double z = DIST_FROM_SENSOR;
-                double x = z * tan(yaw);
-                double y = z * tan(pitch);
-                Serial.print("[");
-                Serial.print(x);
+              Serial.print(pointExists[yawIndex][pitchIndex] ? "True" : "False");
+              if (pitchIndex < NUM_PITCH - 1) {
                 Serial.print(", ");
-                Serial.print(y);
-                Serial.print(", ");
-                Serial.print(z);
-                Serial.print("]");
               }
             }
+            Serial.print("]");
+            if (yawIndex < NUM_YAW - 1) {
+              Serial.print(", ");
+            }
           }
-          Serial.println("]");
+          Serial.println("]}");
         }
       }
 

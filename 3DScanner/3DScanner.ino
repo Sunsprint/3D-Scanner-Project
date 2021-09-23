@@ -12,18 +12,19 @@
 Servo yaw;
 Servo pitch;
 
-#define MIN_YAW 45
-#define MAX_YAW 135
+#define MIN_YAW 0
+#define MAX_YAW 90
 #define YAW_STEP 5
 
-#define MIN_PITCH 45
-#define MAX_PITCH 90
+#define MIN_PITCH 135
+#define MAX_PITCH 180
 #define PITCH_STEP 5
 
 int yawIndex = 0;
 int pitchIndex = 0;
+int indexDirection = 1;
 
-#define WAIT_TIME 5
+#define WAIT_TIME 500
 
 
 // Info storage
@@ -54,6 +55,7 @@ void setup() {
   pitch.attach(PITCH_SERVO);
   pitch.write(MIN_PITCH);
   pitchIndex = 0;
+  indexDirection = 1;
 
   // Info setup
   lastUpdateTime = millis();
@@ -89,14 +91,15 @@ void loop() {
       }
 
       // Increment position
-      yawIndex++;
-      if (yawIndex >= NUM_YAW) {
-        yawIndex = 0;
+      yawIndex += indexDirection;
+      if (yawIndex >= NUM_YAW || yawIndex < 0) {
+        yawIndex = constrain(yawIndex, 0, NUM_YAW - 1);
+        indexDirection = -indexDirection;
         pitchIndex++;
         if (pitchIndex >= NUM_PITCH) {
           done = true;
 
-          // Calculate and print final points to give to python
+          // Print out general info to send to python
           Serial.print("{'minYaw': ");
           Serial.print(MIN_YAW);
           Serial.print(", 'maxYaw': ");
@@ -110,6 +113,8 @@ void loop() {
           Serial.print(", 'pitchStep': ");
           Serial.print(PITCH_STEP);
           Serial.print(", 'pointExists': [");
+
+          // Print out data for each point
           for (yawIndex = 0; yawIndex < NUM_YAW; yawIndex++) {
             Serial.print("[");
             for (pitchIndex = 0; pitchIndex < NUM_PITCH; pitchIndex++) {
@@ -132,6 +137,4 @@ void loop() {
       pitch.write(MIN_PITCH + pitchIndex * PITCH_STEP);
     }
   }
-
-  delay(20);
 }

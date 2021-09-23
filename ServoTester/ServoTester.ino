@@ -1,13 +1,13 @@
 #include <Servo.h>
 
-#define SERVO 3
-#define DEC_BUTTON 6
-#define INC_BUTTON 7
+#define SERVO 5
+#define DEC_BUTTON 11
+#define INC_BUTTON 12
 Servo servo;
 
 #define MIN_RANGE 10
 #define MAX_RANGE 170
-#define INCREMENT = 30;
+#define INCREMENT 30;
 int currentPos = 0;
 
 boolean lastDecPressed = false;

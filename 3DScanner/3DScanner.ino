@@ -12,12 +12,12 @@
 Servo yaw;
 Servo pitch;
 
-#define MIN_YAW 0
-#define MAX_YAW 90
+#define MIN_YAW 45
+#define MAX_YAW 105
 #define YAW_STEP 5
 
-#define MIN_PITCH 135
-#define MAX_PITCH 180
+#define MIN_PITCH 15
+#define MAX_PITCH 60
 #define PITCH_STEP 5
 
 int yawIndex = 0;
@@ -28,9 +28,11 @@ int indexDirection = 1;
 
 
 // Info storage
+#define NUM_READS 3
 #define NUM_YAW (MAX_YAW - MIN_YAW) / YAW_STEP + 1
 #define NUM_PITCH (MAX_PITCH - MIN_PITCH) / PITCH_STEP + 1
 boolean pointExists[NUM_YAW][NUM_PITCH];
+double distances[NUM_YAW][NUM_PITCH];
 unsigned long lastUpdateTime;
 boolean done = false;
 
@@ -38,9 +40,9 @@ boolean done = false;
 double analogToDistance(int analog) {
   return (log(analog) - 6.44124) / -0.01675;
 }
-// Given a value from the distance sensor, return whether the scanner sees something
-boolean doesPointExist(int analog) {
-  return analogToDistance(analog) < DISTANCE_CUTOFF;
+// Given a distance from the distance sensor, return whether the scanner sees something
+boolean doesPointExist(double distance) {
+  return distance < DISTANCE_CUTOFF;
 }
 
 
@@ -76,8 +78,16 @@ void loop() {
       lastUpdateTime = currentTime;
 
       // See if point is there
+      double sum = 0;
+      for (int reading = 0; reading < NUM_READS; reading++) {
       int analog = analogRead(DISTANCE_SENSOR);
-      pointExists[yawIndex][pitchIndex] = doesPointExist(analog);
+        sum += analogToDistance(analog);
+        delay(50);
+      }
+      double finalDistance = sum / NUM_READS;
+      distances[yawIndex][pitchIndex] = finalDistance;
+      pointExists[yawIndex][pitchIndex] = doesPointExist(finalDistance);
+      
 
       // Log info
       Serial.print("Yaw ");
@@ -85,10 +95,12 @@ void loop() {
       Serial.print(" and pitch ");
       Serial.print(MIN_PITCH + pitchIndex * PITCH_STEP);
       if (pointExists[yawIndex][pitchIndex]) {
-        Serial.println(" exists.");
+        Serial.print(" exists.");
       } else {
-        Serial.println(" does not exist");
+        Serial.print(" does not exist.");
       }
+      Serial.print("Distance: ");
+      Serial.println(finalDistance);
 
       // Increment position
       yawIndex += indexDirection;
@@ -112,13 +124,13 @@ void loop() {
           Serial.print(MAX_PITCH);
           Serial.print(", 'pitchStep': ");
           Serial.print(PITCH_STEP);
-          Serial.print(", 'pointExists': [");
+          Serial.print(", 'distances': [");
 
           // Print out data for each point
           for (yawIndex = 0; yawIndex < NUM_YAW; yawIndex++) {
             Serial.print("[");
             for (pitchIndex = 0; pitchIndex < NUM_PITCH; pitchIndex++) {
-              Serial.print(pointExists[yawIndex][pitchIndex] ? "True" : "False");
+              Serial.print(distances[yawIndex][pitchIndex]);
               if (pitchIndex < NUM_PITCH - 1) {
                 Serial.print(", ");
               }
